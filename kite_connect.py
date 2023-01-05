@@ -148,7 +148,6 @@ class KiteApp:
         order_id = self.session.put(f"{self.root_url}/orders/{variety}/{order_id}",
                                     data=params, headers=self.headers).json()["data"][
             "order_id"]
-        # self.session.put().json()
         return order_id
 
     def cancel_order(self, variety, order_id, parent_order_id=None):

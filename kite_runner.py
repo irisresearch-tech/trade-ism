@@ -3,6 +3,8 @@ import time
 import json
 import math
 import kite_connect
+from time import sleep
+from operator import itemgetter
 
 enctoken = os.getenv("enctoken") # set enctoken, REQUIRED field
 
@@ -134,20 +136,45 @@ def get_open_positions():
                 "buy_quantity": p['buy_quantity'],
                 "sell_quantity": p['sell_quantity'],
                 "open_size": p['buy_quantity'] - p['sell_quantity'],
+                "side": "buy" if p['buy_quantity'] > p['sell_quantity'] else "sell",
+                'pnl': p['m2m'],
             }
             open_positions.append(open_position)
+    open_positions = sorted(open_positions, key=itemgetter('side'), reverse=True)
     return open_positions
+
+def stop_loss_runner(sl_amount):
+    while True:
+        open_positions = get_open_positions()
+        pnl = sum(map(
+            lambda p: p['pnl'], open_positions
+        ))
+        print("current pnl: %f" % pnl)
+        if pnl < sl_amount:
+            print("current pnl less than SL amount: %s, closing all positions" % sl_amount)
+            close_all_positions("")
+        time.sleep(10)
+        
     
 if __name__ == '__main__':
     client = kite_connect.KiteApp(enctoken=enctoken)
     command = os.getenv("command")
-    if command != None :
+    if command != None and command != "":
         if command == "close_all":
             side = os.getenv("side")
             close_all_positions(side=side)
         elif command == "place_order":
             place_order()
-        
-    
+        elif command == "sl_runner":
+            sl_amount = os.getenv("sl_amount")
+            if sl_amount != None and sl_amount != "":
+                sl_amount = float(sl_amount.strip())
+                stop_loss_runner(sl_amount)
+            else:
+                print("required sl_amount. Exiting!")
+        else:
+            print("%s command not implemented" % command)
+    else:
+        print("required command. Exiting!")
 
 
