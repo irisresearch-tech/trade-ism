@@ -3,8 +3,10 @@ import time
 import json
 import math
 import kite_connect
+import sys
 from time import sleep
 from operator import itemgetter
+from signal import signal, SIGPIPE, SIG_DFL
 
 enctoken = os.getenv("enctoken") # set enctoken, REQUIRED field
 
@@ -143,21 +145,41 @@ def get_open_positions():
     open_positions = sorted(open_positions, key=itemgetter('side'), reverse=True)
     return open_positions
 
+def get_open_positions():
+    positions_response = client.positions()
+    open_positions = []
+    for p in positions_response['net']:
+        if p["sell_quantity"] != p["buy_quantity"]:
+            open_position = {
+                "instrument": p['tradingsymbol'],
+                "buy_price": p['buy_price'],
+                "sell_price": p['sell_price'],
+                "buy_quantity": p['buy_quantity'],
+                "sell_quantity": p['sell_quantity'],
+                "open_size": p['buy_quantity'] - p['sell_quantity'],
+                "side": "buy" if p['buy_quantity'] > p['sell_quantity'] else "sell",
+                'pnl': p['pnl'],
+            }
+            open_positions.append(open_position)
+    open_positions = sorted(open_positions, key=itemgetter('side'), reverse=True)
+    return open_positions
+
+def get_net_pnl():
+    positions = client.positions()
+    return sum(map(
+        lambda p: p["pnl"], positions["net"]
+    ))
+    
 def stop_loss_runner(sl_amount):
     while True:
-        open_positions = get_open_positions()
-        pnl = sum(map(
-            lambda p: p['pnl'], open_positions
-        ))
-        print("current pnl: %f" % pnl)
-        if pnl < sl_amount:
-            print("current pnl less than SL amount: %s, closing all positions" % sl_amount)
+        net_pnl = get_net_pnl()
+        print("Net PnL: %f" % net_pnl)
+        if net_pnl < sl_amount:
+            print("Current PnL less than SL amount: %s, closing all positions" % sl_amount)
             close_all_positions("")
-        time.sleep(10)
-        
-    
-if __name__ == '__main__':
-    client = kite_connect.KiteApp(enctoken=enctoken)
+        time.sleep(1)
+
+def main():
     command = os.getenv("command")
     if command != None and command != "":
         if command == "close_all":
@@ -178,3 +200,8 @@ if __name__ == '__main__':
         print("required command. Exiting!")
 
 
+
+    
+if __name__ == '__main__':
+    client = kite_connect.KiteApp(enctoken=enctoken)
+    main()
