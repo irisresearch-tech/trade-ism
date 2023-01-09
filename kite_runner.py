@@ -164,15 +164,29 @@ def get_open_positions():
     open_positions = sorted(open_positions, key=itemgetter('side'), reverse=True)
     return open_positions
 
-def get_net_pnl():
+def get_net_pnl(client):
     positions = client.positions()
+    # print(json.dumps(positions, indent=4))
+    # m2m =  sum(map(
+    #     lambda p: p["m2m"], positions["net"]
+    # ))
+    # pnl =  sum(map(
+    #     lambda p: p["value"], positions["net"]
+    # ))
+    # unl =  sum(map(
+    #     lambda p: p["unrealised"], positions["net"]
+    # ))
+    # print("m2m %f"%m2m)
+    # print("value %f"%pnl)
+    # print("upl %f"%unl)
     return sum(map(
         lambda p: p["pnl"], positions["net"]
     ))
     
 def stop_loss_runner(sl_amount):
     while True:
-        net_pnl = get_net_pnl()
+        client = kite_connect.KiteApp(enctoken=enctoken)
+        net_pnl = get_net_pnl(client)
         print("Net PnL: %f" % net_pnl)
         if net_pnl < sl_amount:
             print("Current PnL less than SL amount: %s, closing all positions" % sl_amount)
