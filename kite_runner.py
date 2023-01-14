@@ -25,53 +25,52 @@ def place_order():
     if expiry == None or expiry == "":
         myprint("please export contract expiry for BANKNIFTY, exiting!")
         return 
-    instrument_prefix = "BANKNIFTY23"+expiry
-    instruments = os.getenv("instrument")
-    if instruments == None or instruments == "":
-        myprint("instrument cannot be empty, exiting!")
+    buy_instrument = os.getenv("Binstrument")
+    sell_instrument = os.getenv("Sinstrument")
+    if((buy_instrument == None or buy_instrument == "") and (sell_instrument == None or sell_instrument == "")):
+        myprint("Bothinstrumentis cannot be empty, exiting!")
         return
-    instruments = instruments.strip().split(",")
-    if len(instruments) != 2:
-        myprint("required 2 instruments to sell and buy, exiting!")
-        return 
-    
-    limit_price = os.getenv("price")
+
+    instrument_prefix = "BANKNIFTY23"+expiry
+
     buy_limit_price, sell_limit_price = 0.0, 0.0
-    if limit_price == None or limit_price.strip() == "":
-        sell_order_type = client.ORDER_TYPE_MARKET
+
+
+    buy_price = os.getenv("Bprice")
+    sell_price = os.getenv("Sprice")
+
+    if(buy_price == None or buy_price == ""):
         buy_order_type = client.ORDER_TYPE_MARKET
-        myprint("Setting order type to MARKET")
-    elif limit_price.__contains__(","):
-        prices = limit_price.strip().split(",")
-        if prices[0] != "":
-            sell_limit_price = float(prices[0])
-        else:
-            sell_order_type = client.ORDER_TYPE_MARKET
-        if prices[1] != "":
-            buy_limit_price = float(prices[1])
-        else:
-            buy_order_type = client.ORDER_TYPE_MARKET
-    
+        buy_limit_price = 0
+    else:
+        buy_limit_price = float(buy_price.strip())
+
+    if(sell_price == None or sell_price == ""):
+        sell_order_type = client.ORDER_TYPE_MARKET
+        sell_limit_price = 0
+    else:
+        sell_limit_price = float(sell_price.strip())
         
     quantity = os.getenv("quantity")
-    if quantity.strip() == "":
+    if quantity == None or quantity == "":
         myprint("quantity is required field")
         return
-    if instruments[0] != "":
+
+    if sell_instrument != "" and sell_instrument != None:
         total_orders_count, failed_count = place_order_kite(
-            instrument=(instrument_prefix+instruments[0]).upper(),
+            instrument=(instrument_prefix+sell_instrument).upper(),
             side=client.TRANSACTION_TYPE_SELL,
             order_type=sell_order_type,
             price=float(sell_limit_price),
-            size=int(quantity),
+            size=int(quantity.strip()),
         )
         myprint("SELL orders placed: %d, failed: %d" % (total_orders_count, failed_count))
         
-    if instruments[1] != "":
+    if buy_instrument != "" and buy_instrument != None:
         total_orders_count, failed_count = place_order_kite(
-            instrument=(instrument_prefix+instruments[1]).upper(),
+            instrument=(instrument_prefix+buy_instrument).upper(),
             side=client.TRANSACTION_TYPE_BUY,
-            size=int(quantity),
+            size=int(quantity.strip()),
             price=float(buy_limit_price),
             order_type=buy_order_type,
         )
