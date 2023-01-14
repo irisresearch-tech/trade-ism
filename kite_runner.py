@@ -205,7 +205,7 @@ def stop_loss_runner(sl_amount):
         if net_pnl < sl_amount:
             myprint("Current PnL less than SL amount: %s, closing all positions" % sl_amount)
             close_all_positions("")
-        time.sleep(5)
+        time.sleep(1)
 
 def main():
     command = os.getenv("command")
