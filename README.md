@@ -19,4 +19,4 @@ command=sl_runner sl_amount=-2000 python kite_runner.py
 git checkout .
 
 # pull latest code from msater branch
-git pull origni master
+git pull origin master
