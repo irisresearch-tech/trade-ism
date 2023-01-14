@@ -10,7 +10,8 @@ export expiry="105"
 command=close_all side=sell python kite_runner.py
 
 # place new orders
-command=place_order price=5,5, quantity=100 instrument=43000PE,42000PE python kite_runner.py
+command=place_order Bprice=20 Sprice= quantity=1700 Binstrument=43000PE Sinstrument=42000PE python3 kite_runner.py
+
 
 # SL runner: this script will run every 10 seconds, PRESS CTRL + C to stop script
 command=sl_runner sl_amount=-2000 python kite_runner.py
