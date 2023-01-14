@@ -56,25 +56,33 @@ def place_order():
         myprint("quantity is required field")
         return
 
-    if sell_instrument != "" and sell_instrument != None:
-        total_orders_count, failed_count = place_order_kite(
-            instrument=(instrument_prefix+sell_instrument).upper(),
-            side=client.TRANSACTION_TYPE_SELL,
-            order_type=sell_order_type,
-            price=float(sell_limit_price),
-            size=int(quantity.strip()),
-        )
-        myprint("SELL orders placed: %d, failed: %d" % (total_orders_count, failed_count))
+    size = int(quantity.strip())
+    num_orders = math.ceil(int(size) / 900)
+    quantity_left = int(size)
+    while num_orders > 0:
+        order_size = int(min(900, quantity_left))
+        num_orders-=1
+        quantity_left-=order_size
+
+        if sell_instrument != "" and sell_instrument != None:
+            total_orders_count, failed_count = place_order_kite(
+                instrument=(instrument_prefix+sell_instrument).upper(),
+                side=client.TRANSACTION_TYPE_SELL,
+                order_type=sell_order_type,
+                price=float(sell_limit_price),
+                size=order_size,
+            )
+            myprint("SELL orders placed: %d, failed: %d" % (total_orders_count, failed_count))
         
-    if buy_instrument != "" and buy_instrument != None:
-        total_orders_count, failed_count = place_order_kite(
-            instrument=(instrument_prefix+buy_instrument).upper(),
-            side=client.TRANSACTION_TYPE_BUY,
-            size=int(quantity.strip()),
-            price=float(buy_limit_price),
-            order_type=buy_order_type,
-        )
-        myprint("BUY orders placed: %d, failed: %d" % (total_orders_count, failed_count))
+        if buy_instrument != "" and buy_instrument != None:
+            total_orders_count, failed_count = place_order_kite(
+                instrument=(instrument_prefix+buy_instrument).upper(),
+                side=client.TRANSACTION_TYPE_BUY,
+                size=order_size,
+                price=float(buy_limit_price),
+                order_type=buy_order_type,
+            )
+            myprint("BUY orders placed: %d, failed: %d" % (total_orders_count, failed_count))
     myprint("------------------------------------------")
     myprint("\n")
 
