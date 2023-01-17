@@ -19,6 +19,69 @@ def myprint(*args):
 def get_client_order_id():
     return "IRIS-{timestamp}".format(timestamp=round(time.time() * 1000))
 
+def straddle_order():
+
+    expiry = os.getenv("expiry")
+    if expiry == None or expiry == "":
+        myprint("please export contract expiry for BANKNIFTY, exiting!")
+        return 
+
+    instrument1 = os.getenv("inst1")
+    instrument2 = os.getenv("inst2")
+    if((instrument1 == None or instrument1 == "") or (instrument2 == None or instrument2 == "")):
+        myprint("any of instruments cannot be empty, exiting!")
+        return
+
+    order_side = os.getenv("side")
+
+    if(os.getenv("side") == "sell"):
+        order_side = client.TRANSACTION_TYPE_SELL
+    elif(os.getenv("side") == "buy"):
+        order_side = client.TRANSACTION_TYPE_BUY
+    else:
+        myprint("side can be either buy or sell nothing else, exiting!")
+        return
+
+
+    instrument_prefix = "BANKNIFTY23"+expiry
+
+    limit_price = 0.0
+    order_type = client.ORDER_TYPE_MARKET
+
+    quantity = os.getenv("quantity")
+    if quantity == None or quantity == "":
+        myprint("quantity is required field")
+        return
+
+    size = int(quantity.strip())
+    num_orders = math.ceil(int(size) / 900)
+    quantity_left = int(size)
+
+    while num_orders > 0:
+        order_size = int(min(900, quantity_left))
+        num_orders-=1
+        quantity_left-=order_size
+
+        total_orders_count, failed_count = place_order_kite(
+            instrument=(instrument_prefix+instrument1).upper(),
+            side=order_side,
+            order_type=order_type,
+            price=float(limit_price),
+            size=order_size,
+        )
+        myprint("orders placed for instrument 1: %d, failed: %d" % (total_orders_count, failed_count))
+        
+        total_orders_count, failed_count = place_order_kite(
+            instrument=(instrument_prefix+instrument2).upper(),
+            side=order_side,
+            order_type=order_type,
+            price=float(limit_price),
+            size=order_size,
+        )
+        myprint("orders placed for instrument 2: %d, failed: %d" % (total_orders_count, failed_count))
+    myprint("------------------------------------------")
+    myprint("\n")
+
 def place_order():
     buy_order_type, sell_order_type = client.ORDER_TYPE_LIMIT, client.ORDER_TYPE_LIMIT
     expiry = os.getenv("expiry")
@@ -225,6 +288,8 @@ def main():
             close_all_positions(side=side)
         elif command == "place_order":
             place_order()
+        elif command == "straddle":
+            straddle_order()
         elif command == "sl_runner":
             sl_amount = os.getenv("sl_amount")
             if sl_amount != None and sl_amount != "":
