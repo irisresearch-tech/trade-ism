@@ -151,13 +151,18 @@ def place_order():
 
 
 def place_order_kite(instrument, side, order_type, price, size):
-    num_orders = math.ceil(int(size) / 900)
+
+    if "BANK" in instrument:
+        single_max_order_size = 900
+    else:
+        single_max_order_size = 1800
+    num_orders = math.ceil(int(size) / single_max_order_size)
     quantity_left = int(size)
     orders = []
     failed_count = 0
     myprint("%s %s, %s %s, %s"% (instrument, side, order_type, price, size))
     while num_orders > 0:
-        order_size = int(min(900, quantity_left))
+        order_size = int(min(single_max_order_size, quantity_left))
         num_orders-=1
         quantity_left-=order_size
         order_response = client.place_order(
@@ -276,7 +281,7 @@ def stop_loss_runner(sl_amount):
         if net_pnl < sl_amount:
             myprint("Current PnL less than SL amount: %s, closing all positions" % sl_amount)
             close_all_positions("")
-        time.sleep(1)
+        time.sleep(5)
 
 def main():
     command = os.getenv("command")
